@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Compare versions against target versions ("versions" file) and update if requested
 
 basedir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
@@ -8,6 +8,12 @@ source ./common.sh
 
 if [[ "$SCRIPT_DID_UPDATE" = "1" ]]; then
     echo "Scripts updated."
+fi
+
+# temporary placeholder error
+if ! bwrap --ro-bind / / true; then
+    echo "FATAL: bwrap missing or nonfunctional"
+    exit 1
 fi
 
 do_notify="no"
@@ -62,6 +68,22 @@ fi
 
 has_updates="no"
 
+if [[ "$steamrt_download_url_target" != "$steamrt_download_url_current" ]]; then
+    echo "Steam Runtime from URL $steamrt_download_url_current is installed, but does not match target ($steamrt_download_url_target)"
+    has_updates="yes"
+    if [[ "$perform_update" = "yes" ]]; then
+        ./update-component.sh steamrt "$steamrt_download_url_target"
+    fi
+fi
+
+if [[ "$proton_download_url_target" != "$proton_download_url_current" ]]; then
+    echo "Proton from URL $proton_download_url_current is installed, but does not match target ($proton_download_url_target)"
+    has_updates="yes"
+    if [[ "$perform_update" = "yes" ]]; then
+        ./update-component.sh proton "$proton_download_url_target"
+    fi
+fi
+
 if [[ "$dxvk_version_current" != "$dxvk_version_target" ]] && [[ "$dxvk_pin_version" != "1" ]]; then
     echo "DXVK version $dxvk_version_current is installed, but does not match target version ($dxvk_version_target)"
     has_updates="yes"
@@ -70,19 +92,19 @@ if [[ "$dxvk_version_current" != "$dxvk_version_target" ]] && [[ "$dxvk_pin_vers
     fi
 fi
 
-if [[ "$dfc_version_current" != "$dfc_version_target" ]]; then
-    echo "FAF client version $dfc_version_current is installed, but does not match target version ($dfc_version_target)"
-    has_updates="yes"
-    if [[ "$perform_update" = "yes" ]]; then
-        ./update-component.sh faf-client "$dfc_version_target"
-    fi
-fi
-
 if [[ "$java_download_url_current" != "$java_download_url_target" ]]; then
     echo "Java runtime from URL $java_download_url_current is installed, but does not match target ($java_download_url_target)"
     has_updates="yes"
     if [[ "$perform_update" = "yes" ]]; then
         ./update-component.sh java "$java_download_url_target"
+    fi
+fi
+
+if [[ "$dfc_version_current" != "$dfc_version_target" ]]; then
+    echo "FAF client version $dfc_version_current is installed, but does not match target version ($dfc_version_target)"
+    has_updates="yes"
+    if [[ "$perform_update" = "yes" ]]; then
+        ./update-component.sh faf-client "$dfc_version_target"
     fi
 fi
 
